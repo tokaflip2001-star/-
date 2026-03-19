@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>会社案内ARプロトタイプ</title>
+    
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; background-color: #000; }
+        #start-button {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 2000; padding: 20px 40px; background: #28a745; color: white;
+            border: none; border-radius: 50px; font-size: 20px; font-weight: bold;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); cursor: pointer;
+        }
+        #ui-guide {
+            position: fixed; top: 30px; left: 0; width: 100%; text-align: center;
+            color: white; z-index: 1000; font-size: 18px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <button id="start-button" onclick="startAR()">ARカメラを起動する</button>
+    <div id="ui-guide" class="hidden">写真を枠内に収めてください</div>
+
+    <a-scene 
+        mindar-image="imageTargetSrc: https://drive.google.com/uc?export=download&id=14BPIvXmq-KLRVC4VqnUvcEvqdwh02Qoz; autoStart: false; uiScanning: yes;" 
+        embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
+        vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: true">
+        
+        <a-assets>
+            <video id="introVideo" 
+                   src="https://drive.google.com/uc?export=download&id=1j0AAYsDb5S12hrqZ13K-w0Rdr4kNpZb6" 
+                   preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
+        </a-assets>
+
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <a-entity id="target-entity" mindar-image-target="targetIndex: 0">
+            <a-video id="ar-video-obj" src="#introVideo" position="0 0 0" height="0.75" width="1" rotation="0 0 0"></a-video>
+        </a-entity>
+    </a-scene>
+
+    <script>
+        function startAR() {
+            const sceneEl = document.querySelector('a-scene');
+            const arSystem = sceneEl.systems["mindar-image-system"];
+            const startButton = document.querySelector("#start-button");
+            const uiGuide = document.querySelector("#ui-guide");
+            const videoEl = document.querySelector("#introVideo");
+
+            // UI切り替え
+            startButton.classList.add("hidden");
+            uiGuide.classList.remove("hidden");
+
+            // ARエンジン開始（GitHubならこれでダイアログが出ます）
+            arSystem.start();
+
+            // 動画の初期化
+            videoEl.muted = true;
+            videoEl.play().then(() => {
+                videoEl.pause();
+                videoEl.muted = false; 
+            });
+
+            // イベント処理
+            const targetEl = document.querySelector('#target-entity');
+            targetEl.addEventListener("targetFound", () => {
+                uiGuide.classList.add("hidden");
+                videoEl.play();
+            });
+            targetEl.addEventListener("targetLost", () => {
+                videoEl.pause();
+            });
+        }
+    </script>
+</body>
+</html>
