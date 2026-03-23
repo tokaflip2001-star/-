@@ -29,16 +29,14 @@
     <button id="start-button" onclick="startAR()">ARカメラを起動する</button>
     <div id="ui-guide" class="hidden">写真を枠内に収めてください</div>
 
-    <a-scene 
-        mindar-image="imageTargetSrc: https://drive.google.com/uc?export=download&id=14BPIvXmq-KLRVC4VqnUvcEvqdwh02Qoz; autoStart: false; uiScanning: yes;" 
-        embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
-        vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: true">
+   <a-scene 
+    mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;" 
+    ... >
         
-        <a-assets>
-            <video id="introVideo" 
-                   src="https://drive.google.com/uc?export=download&id=1j0AAYsDb5S12hrqZ13K-w0Rdr4kNpZb6" 
-                   preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
-        </a-assets>
+       <a-assets>
+    <video id="introVideo" src="./intro_video.mp4" 
+           preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
+</a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
