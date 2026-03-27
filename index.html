@@ -33,9 +33,11 @@
     mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;" 
     ... >
         
-       <a-assets>
-    <video id="動画サンプル" src="./動画サンプル.mp4" 
-           preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
+<a-assets>
+    <video id="introVideo" src="./intro_video.mp4" 
+           preload="auto" autoplay loop muted 
+           crossorigin="anonymous" 
+           playsinline webkit-playsinline></video>
 </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
