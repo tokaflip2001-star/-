@@ -22,10 +22,30 @@
             pointer-events: none;
         }
         .hidden { display: none !important; }
+        /* サイト誘導ボタンのスタイル */
+#web-button {
+    position: fixed;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3000; /* 最前面に */
+    padding: 15px 30px;
+    background-color: #ff4757; /* 目立つ色 */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 18px;
+    font-weight: bold;
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: opacity 0.5s;
+}
     </style>
 </head>
 <body>
-
+<a id="web-button" href="https://www.example.co.jp/" target="_blank" class="hidden">
+    公式サイトで詳細を見る
+</a>
     <button id="start-button" onclick="startAR()">ARカメラを起動する</button>
     <div id="ui-guide" class="hidden">写真を枠内に収めてください</div>
 
@@ -48,7 +68,21 @@
     </a-scene>
 
     <script>
-        function startAR() {
+        function startAR(// startAR関数の中、イベント処理の部分に追加
+const webButton = document.querySelector("#web-button");
+
+// 動画が終了した時のイベント
+videoEl.addEventListener('ended', function() {
+    console.log("動画再生終了");
+    webButton.classList.remove("hidden"); // ボタンを表示
+    // 必要なら、動画を少し暗くしたり消したりしてボタンを目立たせることも可能です
+});
+
+// ターゲットを見失った時はボタンも隠す（任意）
+targetEl.addEventListener("targetLost", () => {
+    videoEl.pause();
+    webButton.classList.add("hidden"); 
+});) {
             const sceneEl = document.querySelector('a-scene');
             const arSystem = sceneEl.systems["mindar-image-system"];
             const startButton = document.querySelector("#start-button");
