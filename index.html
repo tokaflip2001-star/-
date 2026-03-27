@@ -3,31 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>会社案内AR - 最終安定版</title>
+    <title>会社案内AR - 安定版</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; background-color: #000; }
+        body { margin: 0; overflow: hidden; background-color: #000; }
+        
+        /* 起動ボタン：カメラ起動を邪魔しないよう配置 */
         #start-button {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            z-index: 2000; padding: 20px 40px; background: #28a745; color: white;
+            z-index: 9999; padding: 20px 40px; background: #28a745; color: white;
             border: none; border-radius: 50px; font-size: 20px; font-weight: bold;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
+
+        /* 誘導ボタン：pointer-eventsを制御してカメラ操作を邪魔させない */
         #web-link-button {
-            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
-            z-index: 3000; padding: 18px 35px; background-color: #ff4757; color: white;
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            z-index: 5000; padding: 15px 30px; background-color: #ff4757; color: white;
             border: none; border-radius: 8px; font-size: 18px; font-weight: bold;
-            text-decoration: none; text-align: center; opacity: 0; 
-            transition: opacity 0.5s; pointer-events: none;
+            text-decoration: none; opacity: 0; transition: opacity 0.5s;
+            pointer-events: none; /* 非表示時は完全に無視させる */
         }
-        #web-link-button.visible { opacity: 1; pointer-events: auto; }
+        #web-link-button.visible {
+            opacity: 1;
+            pointer-events: auto; /* 表示された時だけクリック可能にする */
+        }
+
         #ui-guide {
-            position: fixed; top: 30px; left: 0; width: 100%; text-align: center;
-            color: white; z-index: 1000; font-size: 16px; text-shadow: 2px 2px 4px #000;
-            pointer-events: none;
+            position: fixed; top: 20px; left: 0; width: 100%; text-align: center;
+            color: white; z-index: 1000; font-size: 16px; pointer-events: none;
         }
         .hidden { display: none !important; }
     </style>
@@ -36,23 +42,23 @@
 
     <button id="start-button" onclick="startAR()">ARカメラを起動する</button>
     <div id="ui-guide" class="hidden">写真を枠内に収めてください</div>
-    <a id="web-link-button" href="https://www.google.co.jp/" target="_blank">もっと詳しく見る</a>
+    <a id="web-link-button" href="https://www.google.co.jp/" target="_blank">詳細はこちら</a>
 
     <a-scene 
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;" 
-        embedded color-space="sRGB" renderer="colorManagement: true" 
+        embedded color-space="sRGB" renderer="colorManagement: true, precision: medium" 
         vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: true">
         
         <a-assets>
             <video id="introVideo" src="./intro_video.mp4" 
                    preload="auto" loop="true" crossorigin="anonymous" 
-                   playsinline webkit-playsinline muted></video>
+                   muted playsinline webkit-playsinline></video>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity id="target-entity" mindar-image-target="targetIndex: 0">
-            <a-video id="ar-video-obj" src="#introVideo" position="0 0 0" height="0.75" width="1" transparent="false"></a-video>
+            <a-video id="ar-video-obj" src="#introVideo" position="0 0 0" height="0.75" width="1"></a-video>
         </a-entity>
     </a-scene>
 
@@ -67,38 +73,32 @@
             const sceneEl = document.querySelector('a-scene');
             const arSystem = sceneEl.systems["mindar-image-system"];
 
-            // 1. ボタンを消して案内を出す
             startButton.classList.add("hidden");
             uiGuide.classList.remove("hidden");
 
-            // 2. ブラウザの「再生許可」を得るために、無音で再生開始
+            // Safari対策：カメラ起動を最優先
+            arSystem.start();
+
+            // 動画の「空再生」でブラウザのロックを解除
             videoEl.play().then(() => {
-                console.log("Video playback started successfully");
-                // 3. 動画が動き出してからARエンジンを起動
-                arSystem.start();
-            }).catch(err => {
-                console.error("Video play failed:", err);
-                // 失敗してもARだけは起動させる
-                arSystem.start();
-            });
+                videoEl.pause();
+                videoEl.muted = false;
+            }).catch(e => console.log("Init play failed", e));
         }
 
-        // 動画の再生時間を監視
+        // 認識した時の処理
+        targetEl.addEventListener("targetFound", () => {
+            uiGuide.classList.add("hidden");
+            videoEl.play();
+        });
+
+        // 5秒判定（再生が始まったら監視）
         videoEl.addEventListener('timeupdate', () => {
-            // 5秒経過したらボタンを表示
             if (videoEl.currentTime >= 5) {
                 webButton.classList.add("visible");
             }
         });
 
-        // 写真が見つかった時
-        targetEl.addEventListener("targetFound", () => {
-            uiGuide.classList.add("hidden");
-            videoEl.muted = false; // 音声を出す
-            videoEl.play();
-        });
-
-        // 写真を見失った時
         targetEl.addEventListener("targetLost", () => {
             videoEl.pause();
         });
