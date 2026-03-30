@@ -3,34 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>会社案内AR - 安定版</title>
+    <title>会社案内AR - 読み込み改善版</title>
     
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; }
-        
-        /* 起動ボタン：カメラ起動を邪魔しないよう配置 */
         #start-button {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             z-index: 9999; padding: 20px 40px; background: #28a745; color: white;
             border: none; border-radius: 50px; font-size: 20px; font-weight: bold;
         }
-
-        /* 誘導ボタン：pointer-eventsを制御してカメラ操作を邪魔させない */
         #web-link-button {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
             z-index: 5000; padding: 15px 30px; background-color: #ff4757; color: white;
             border: none; border-radius: 8px; font-size: 18px; font-weight: bold;
             text-decoration: none; opacity: 0; transition: opacity 0.5s;
-            pointer-events: none; /* 非表示時は完全に無視させる */
+            pointer-events: none;
         }
-        #web-link-button.visible {
-            opacity: 1;
-            pointer-events: auto; /* 表示された時だけクリック可能にする */
-        }
-
+        #web-link-button.visible { opacity: 1; pointer-events: auto; }
         #ui-guide {
             position: fixed; top: 20px; left: 0; width: 100%; text-align: center;
             color: white; z-index: 1000; font-size: 16px; pointer-events: none;
@@ -46,7 +38,7 @@
 
     <a-scene 
         mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;" 
-        embedded color-space="sRGB" renderer="colorManagement: true, precision: medium" 
+        embedded renderer="colorManagement: false, precision: medium" 
         vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: true">
         
         <a-assets>
@@ -73,26 +65,33 @@
             const sceneEl = document.querySelector('a-scene');
             const arSystem = sceneEl.systems["mindar-image-system"];
 
+            // エラーチェック: arSystemが存在するか
+            if (!arSystem) {
+                alert("ARエンジンの読み込みに失敗しました。ページを更新してください。");
+                return;
+            }
+
             startButton.classList.add("hidden");
             uiGuide.classList.remove("hidden");
 
-            // Safari対策：カメラ起動を最優先
+            // カメラ起動
             arSystem.start();
-
-            // 動画の「空再生」でブラウザのロックを解除
+            
+            // 動画を「準備完了」にするための処理
             videoEl.play().then(() => {
                 videoEl.pause();
                 videoEl.muted = false;
-            }).catch(e => console.log("Init play failed", e));
+            }).catch(e => console.log("Init play muted", e));
         }
 
-        // 認識した時の処理
+        // 認識イベント
         targetEl.addEventListener("targetFound", () => {
+            console.log("Target Found!");
             uiGuide.classList.add("hidden");
             videoEl.play();
         });
 
-        // 5秒判定（再生が始まったら監視）
+        // 5秒経過でボタン表示
         videoEl.addEventListener('timeupdate', () => {
             if (videoEl.currentTime >= 5) {
                 webButton.classList.add("visible");
@@ -101,6 +100,11 @@
 
         targetEl.addEventListener("targetLost", () => {
             videoEl.pause();
+        });
+        
+        // エラーハンドリング: .mindファイルの読み込み失敗を検知
+        document.querySelector('a-scene').addEventListener("AR_ERROR", (event) => {
+            alert("ARエラー: 画像データ（.mind）が読み込めませんでした。");
         });
     </script>
 </body>
